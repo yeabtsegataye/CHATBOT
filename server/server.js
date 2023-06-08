@@ -5,11 +5,17 @@ const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 const userRoutes = require("./router/userRouter");
 const chatRoutes = require("./router/chatRoutes");
 const messageRoutes = require("./router/messageRoutes");
+const path = require("path");
+
 require("dotenv").config();
 
 const app = express();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: ["http://localhost:3000"],
+  })
+);
 app.use(express.json());
 mongoose
   .connect(process.env.MONGOODBURL)
@@ -65,6 +71,22 @@ app.use((req, res, next) => {
 app.use("/api/user", userRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/message", messageRoutes);
+// --------------------------deployment------------------------------
+
+const clientBuildPath = path.resolve(__dirname, "..", "client", "build");
+
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(clientBuildPath));
+
+  app.get("*", (req, res) =>
+    res.sendFile(path.resolve(clientBuildPath, "index.html"))
+  );
+} else {
+  app.get("/", (req, res) => {
+    res.send("API is running..");
+  });
+}
+// --------------------------deployment------------------------------
 
 app.use(notFound);
 app.use(errorHandler);
